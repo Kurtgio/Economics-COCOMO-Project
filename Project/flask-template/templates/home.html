@@ -1,0 +1,269 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1>Economic Analysis of Software Projects</h1>
+    
+    <div class="tab-container">
+        <div class="tabs">
+            <button class="tab-button active" data-tab="cocomo">COCOMO</button>
+            <button class="tab-button" data-tab="financial">Financial</button>
+            <button class="tab-button" data-tab="risk">Risks</button>
+        </div>
+        
+        <div class="tab-content active" id="cocomo-tab">
+            <h2>COCOMO Estimation</h2>
+            <form id="cocomo-form">
+                <div class="form-group">
+                    <label for="kloc">KLOC (Thousands of lines of code)</label>
+                    <input type="number" id="kloc" min="0" step="0.1" required>
+                </div>
+                <div class="form-group">
+                    <label for="project-type">Project type</label>
+                    <select id="project-type">
+                        <option value="organic">Simple (Organic)</option>
+                        <option value="semi-detached">Medium (Semi-detached)</option>
+                        <option value="embedded">Complex (Embedded)</option>
+                    </select>
+                </div>
+                <button type="button" onclick="calculateCocomo()">Calculate</button>
+            </form>
+            <div id="cocomo-result" class="result-box"></div>
+        </div>
+        
+        <div class="tab-content" id="financial-tab">
+            <h2>Financial Analysis</h2>
+            <form id="financial-form">
+                <div class="form-group">
+                    <label for="cost">Total cost (€)</label>
+                    <input type="number" id="cost" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label for="annual-benefit">Annual benefit (€)</label>
+                    <input type="number" id="annual-benefit" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label for="years">Duration (years)</label>
+                    <input type="number" id="years" min="1" value="5" required>
+                </div>
+                <div class="form-group">
+                    <label for="discount-rate">Discount rate</label>
+                    <input type="number" id="discount-rate" min="0" max="1" step="0.01" value="0.1" required>
+                </div>
+                <button type="button" onclick="calculateFinancial()">Calculate</button>
+            </form>
+            <div id="financial-result" class="result-box"></div>
+        </div>
+        
+        <div class="tab-content" id="risk-tab">
+            <h2>Risk Matrix</h2>
+            <div id="risk-inputs">
+                <div class="risk-row">
+                    <input type="text" placeholder="Risk name" class="risk-name">
+                    <select class="risk-probability">
+                        <option value="1">1 - Very unlikely</option>
+                        <option value="2">2 - Unlikely</option>
+                        <option value="3">3 - Possible</option>
+                        <option value="4">4 - Likely</option>
+                        <option value="5">5 - Very likely</option>
+                    </select>
+                    <select class="risk-impact">
+                        <option value="1">1 - Minimal impact</option>
+                        <option value="2">2 - Minor impact</option>
+                        <option value="3">3 - Medium impact</option>
+                        <option value="4">4 - Major impact</option>
+                        <option value="5">5 - Critical impact</option>
+                    </select>
+                    <button type="button" onclick="removeRiskRow(this)" class="remove-risk">-</button>
+                </div>
+            </div>
+            <button type="button" onclick="addRiskRow()" class="add-risk">+ Add a risk</button>
+            <button type="button" onclick="calculateRisks()">Evaluate risks</button>
+            <div id="risk-result" class="result-box"></div>
+        </div>
+    </div>
+
+    <button type="button" onclick="generateReport()" class="report-button">Generate PDF report</button>
+</div>
+
+<script>
+    // Tab switching logic
+    document.querySelectorAll('.tab-button').forEach(button => {
+        button.addEventListener('click', () => {
+            document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            
+            button.classList.add('active');
+            document.getElementById(button.dataset.tab + '-tab').classList.add('active');
+        });
+    });
+    
+    // COCOMO calculation
+    async function calculateCocomo() {
+        const kloc = document.getElementById('kloc').value;
+        const projectType = document.getElementById('project-type').value;
+        
+        if (!kloc) {
+            alert('Please enter a value for KLOC');
+            return;
+        }
+        
+        const response = await fetch('/api/cocomo', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                kloc: kloc,
+                project_type: projectType
+            })
+        });
+        
+        const result = await response.json();
+        
+        document.getElementById('cocomo-result').innerHTML = `
+            <h3>Results</h3>
+            <p>Effort: ${result.effort} person-months</p>
+            <p>Duration: ${result.dev_time} months</p>
+            <p>Average staff: ${result.staff} people</p>
+        `;
+    }
+    
+    // Financial calculations
+    async function calculateFinancial() {
+        const cost = document.getElementById('cost').value;
+        const annualBenefit = document.getElementById('annual-benefit').value;
+        const years = document.getElementById('years').value;
+        const discountRate = document.getElementById('discount-rate').value;
+        
+        if (!cost || !annualBenefit) {
+            alert('Please fill in all fields');
+            return;
+        }
+        
+        const response = await fetch('/api/financial', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                cost: cost,
+                annual_benefit: annualBenefit,
+                years: years,
+                discount_rate: discountRate
+            })
+        });
+        
+        const result = await response.json();
+        
+        document.getElementById('financial-result').innerHTML = `
+            <h3>Results</h3>
+            <p>ROI: ${result.roi}%</p>
+            <p>NPV: ${result.npv}€</p>
+            <p>Payback period: ${result.payback} years</p>
+        `;
+    }
+    
+    // Risk management
+    function addRiskRow() {
+        const newRow = document.querySelector('.risk-row').cloneNode(true);
+        newRow.querySelectorAll('input, select').forEach(input => input.value = '');
+        document.getElementById('risk-inputs').appendChild(newRow);
+    }
+    
+    function removeRiskRow(button) {
+        if (document.querySelectorAll('.risk-row').length > 1) {
+            button.closest('.risk-row').remove();
+        }
+    }
+    
+    async function calculateRisks() {
+        const risks = [];
+        
+        document.querySelectorAll('.risk-row').forEach(row => {
+            const name = row.querySelector('.risk-name').value || 'Unnamed risk';
+            const probability = row.querySelector('.risk-probability').value;
+            const impact = row.querySelector('.risk-impact').value;
+            
+            risks.push({
+                name: name,
+                probability: probability,
+                impact: impact
+            });
+        });
+        
+        const response = await fetch('/api/risk', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                risks: risks
+            })
+        });
+        
+        const result = await response.json();
+        
+        let riskHTML = '<h3>Risk Matrix</h3>';
+        riskHTML += '<table class="risk-table"><tr><th>Risk</th><th>Score</th><th>Category</th></tr>';
+        
+        result.risks.forEach(risk => {
+            riskHTML += `
+                <tr class="risk-${risk.category.toLowerCase()}">
+                    <td>${risk.name}</td>
+                    <td>${risk.score}</td>
+                    <td>${risk.category}</td>
+                </tr>
+            `;
+        });
+        
+        riskHTML += '</table>';
+        document.getElementById('risk-result').innerHTML = riskHTML;
+    }
+    
+    // PDF report generation
+    function generateReport() {
+    // Get data from forms
+    const kloc = document.getElementById('kloc').value || '0';
+    const projectType = document.getElementById('project-type').value || 'organic';
+    const cost = document.getElementById('cost').value || '0';
+    const annualBenefit = document.getElementById('annual-benefit').value || '0';
+    const years = document.getElementById('years').value || '5';
+    const discountRate = document.getElementById('discount-rate').value || '0.1';
+
+    if (parseFloat(cost) <= 0) {
+        alert('Cost must be greater than zero for financial calculations');
+        return; // Stop generation if cost is invalid
+    }
+
+    // Build query string
+    const queryParams = new URLSearchParams({
+        kloc: kloc,
+        project_type: projectType,
+        cost: cost,
+        annual_benefit: annualBenefit,
+        years: years,
+        discount_rate: discountRate
+    });
+    
+    // Get risk data
+    const risks = [];
+    document.querySelectorAll('.risk-row').forEach(row => {
+        const name = row.querySelector('.risk-name').value || 'Unnamed risk';
+        const probability = row.querySelector('.risk-probability').value;
+        const impact = row.querySelector('.risk-impact').value;
+        
+        if (name) {
+            risks.push(`${name}|${probability}|${impact}`);
+        }
+    });
+    
+    if (risks.length > 0) {
+        queryParams.append('risks', risks.join(','));
+    }
+    
+    // Navigate to the report URL with parameters
+    window.open('/generate-report?' + queryParams.toString(), '_blank');
+}
+</script>
+{% endblock %}

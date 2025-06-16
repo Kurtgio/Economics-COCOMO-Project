@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+{% block title %}About - Software Project Economic Analysis Tool{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>About This Tool</h1>
+    
+    <section>
+        <h2>Purpose</h2>
+        <p>This web application provides economic analysis tools for software development projects. It helps project managers, developers, and stakeholders make data-driven decisions by estimating costs, evaluating financial returns, and assessing project risks.</p>
+    </section>
+    
+    <section>
+        <h2>Economic Models</h2>
+        
+        <h3>COCOMO (Constructive Cost Model)</h3>
+        <p>Developed by Barry Boehm in 1981, COCOMO estimates software development effort, cost, and schedule based on program size measured in thousands of lines of code (KLOC). Our implementation includes:</p>
+        <ul>
+            <li><strong>Organic projects:</strong> Small teams with good experience working with less rigid requirements</li>
+            <li><strong>Semi-detached projects:</strong> Medium-sized teams with mixed experience levels</li>
+            <li><strong>Embedded projects:</strong> Developed within a set of tight constraints</li>
+        </ul>
+        <p>The basic COCOMO formulas used are:</p>
+        <ul>
+            <li>Effort (person-months) = a × (KLOC)<sup>b</sup></li>
+            <li>Development Time (months) = 2.5 × (Effort)<sup>0.38</sup></li>
+            <li>Staff = Effort / Development Time</li>
+        </ul>
+        <p>Where coefficients a and b vary by project type.</p>
+        
+        <h3>Financial Analysis</h3>
+        <p>We provide standard financial metrics to evaluate project investments:</p>
+        <ul>
+            <li><strong>ROI (Return on Investment):</strong> Measures the gain or loss generated relative to the investment amount</li>
+            <li><strong>NPV (Net Present Value):</strong> Calculates the present value of all future cash flows against the initial investment</li>
+            <li><strong>Payback Period:</strong> Estimates the time required to recover the initial investment</li>
+        </ul>
+        
+        <h3>Risk Assessment</h3>
+        <p>Our tool implements a standard probability/impact risk matrix where:</p>
+        <ul>
+            <li>Each risk is evaluated based on its probability (1-5) and potential impact (1-5)</li>
+            <li>The risk score is calculated as Probability × Impact</li>
+            <li>Risks are categorized as Low (1-5), Medium (6-15), or High (16-25)</li>
+        </ul>
+    </section>
+    
+    <section>
+        <h2>How to Use</h2>
+        <p>Navigate between the different analysis tools using the tab system on the home page:</p>
+        <ol>
+            <li>Select the appropriate analysis tab (COCOMO, Financial, or Risk)</li>
+            <li>Enter the required parameters</li>
+            <li>Click the calculate button to see results</li>
+            <li>Use the "Generate PDF report" button to create a downloadable summary</li>
+        </ol>
+    </section>
+    
+    <section>
+        <h2>Technical Information</h2>
+        <p>This application is built with:</p>
+        <ul>
+            <li>Python with Flask for the backend</li>
+            <li>Vanilla JavaScript for frontend functionality</li>
+            <li>Responsive HTML/CSS for the user interface</li>
+        </ul>
+        <p>The application calculates all estimates in real-time without storing data in a database.</p>
+    </section>
+    
+    <section>
+        <h2>References</h2>
+        <ul>
+            <li>Boehm, B. W. (1981). <em>Software Engineering Economics</em>. Prentice-Hall.</li>
+            <li>Project Management Institute. (2017). <em>A Guide to the Project Management Body of Knowledge (PMBOK® Guide)</em>.</li>
+        </ul>
+    </section>
+</div>
+{% endblock %}
